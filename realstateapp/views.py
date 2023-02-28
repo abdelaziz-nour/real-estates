@@ -1,3 +1,4 @@
+import logging
 from rest_framework.response import Response
 from .serializer import *
 from .models import *
@@ -25,50 +26,56 @@ def index(request):
 def register(request):
 
     serializer = RegisterSerializer(data=request.data)
-    if serializer.is_valid(raise_exception=True):
-        info_user = userInfo(
-            first_name=request.data.get("first_name"),
-            second_name=request.data.get("second_name"),
-            thired_name=request.data.get("thired_name"),
-            forth_name=request.data.get("forth_name"),
-            national_number=int(request.data.get("national_number")),
-            phone=int(request.data.get("phone")),
-            email=request.data.get("email"),
-            username=request.data.get("username"),
-            password=request.data.get("password"),
-            state=request.data.get("state"),
-            city=request.data.get("city"),
-        )
-        print(info_user)
-    else:
-        return Response("wrong data entries")
+    print("test")
+    try:
+        if serializer.is_valid(raise_exception=True):
 
-    if info_user:
-        registry = civil_registry.objects.filter(
-            first_name=request.data.get("first_name"),
-            second_name=request.data.get("second_name"),
-            thired_name=request.data.get("thired_name"),
-            forth_name=request.data.get("forth_name"),
-            national_number=int(request.data.get("national_number")),
-        )
-        if registry:
-            user = User.objects.create_user(
-                email=request.data.get("email"),
-                username=request.data.get("username"),
-                password=request.data.get("password"),
+            info_user = userInfo(
+                first_name=request.data["first_name"],
+                second_name=request.data["second_name"],
+                thired_name=request.data["thired_name"],
+                forth_name=request.data["forth_name"],
+                national_number=request.data["national_number"],
+                phone=request.data["phone"],
+                email=request.data["email"],
+                username=request.data["username"],
+                password=request.data["password"],
+                state=request.data["state"],
+                city=request.data["city"],
             )
-            info_user.user = user
-            info_user.save()
-            token = Token.objects.create(user=user)
-            return Response(token.key)
+
         else:
-            return Response("no matching data in database")
+            return Response("wrong data entries")
+
+        if info_user:
+            registry = civil_registry.objects.filter(
+                first_name=request.data["first_name"],
+                second_name=request.data["second_name"],
+                thired_name=request.data["thired_name"],
+                forth_name=request.data["forth_name"],
+                national_number=request.data["national_number"],
+            )
+            if registry:
+                user = User.objects.create_user(
+                    email=request.data["email"],
+                    username=request.data["username"],
+                    password=request.data["password"],
+                )
+                info_user.user = user
+                info_user.save()
+                token = Token.objects.create(user=user)
+                return Response(token.key)
+            else:
+                return Response("no matching data in database")
+    except BaseException as exception:
+        logging.warning(f"Exception Name: {type(exception).__name__}")
+        logging.warning(f"Exception Desc: {exception}")
 
 
 @api_view(['POST'])
 def login(request):
-    username = request.data.get("username")
-    password = request.data.get("password")
+    username = request.data["username"]
+    password = request.data["password"]
     try:
         user = authenticate(username=username, password=password)
         if user is not None:
