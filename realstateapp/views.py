@@ -8,6 +8,8 @@ from django.contrib.auth import authenticate
 from rest_framework.authentication import *
 from rest_framework.decorators import *
 from rest_framework.permissions import *
+
+
 def index(request):
     return HttpResponse("Hello, world. You're at the polls index.")
 # register if 1234 names == 1234 in register && NN== registry NN
@@ -19,64 +21,71 @@ def index(request):
 # + admin should accept add befor apear
 
 
-
 @api_view(['post'])
 def register(request):
+
     serializer = RegisterSerializer(data=request.data)
     if serializer.is_valid(raise_exception=True):
         info_user = userInfo(
-        first_name=request.data["first_name"],
-        second_name=request.data["second_name"],
-        thired_name=request.data["thired_name"],
-        forth_name=request.data["forth_name"],
-        national_number=request.data["national_number"],
-        phone=request.data["phone"],
-        email=request.data["email"],
-        username=request.data["username"],
-        password=request.data["password"],
-        state=request.data["state"],
-        city=request.data["city"],
+            first_name=request.data.get("first_name"),
+            second_name=request.data.get("second_name"),
+            thired_name=request.data.get("thired_name"),
+            forth_name=request.data.get("forth_name"),
+            national_number=int(request.data.get("national_number")),
+            phone=int(request.data.get("phone")),
+            email=request.data.get("email"),
+            username=request.data.get("username"),
+            password=request.data.get("password"),
+            state=request.data.get("state"),
+            city=request.data.get("city"),
         )
-    else :return Response("worng data entring")
+        print(info_user)
+    else:
+        return Response("wrong data entries")
+
     if info_user:
-        registry =civil_registry.objects.filter(first_name=request.data["first_name"],
-                                         second_name=request.data["second_name"],
-                                         thired_name=request.data["thired_name"],
-                                         forth_name=request.data["forth_name"],
-                                         national_number=request.data["national_number"]
-                                         )
+        registry = civil_registry.objects.filter(
+            first_name=request.data.get("first_name"),
+            second_name=request.data.get("second_name"),
+            thired_name=request.data.get("thired_name"),
+            forth_name=request.data.get("forth_name"),
+            national_number=int(request.data.get("national_number")),
+        )
         if registry:
-            user= User.objects.create_user(
-            username=request.data["username"],
-            password=request.data["password"],
-            email=request.data["email"],
+            user = User.objects.create_user(
+                email=request.data.get("email"),
+                username=request.data.get("username"),
+                password=request.data.get("password"),
             )
-            info_user.user=user
+            info_user.user = user
             info_user.save()
-            token =Token.objects.create(user=user)
+            token = Token.objects.create(user=user)
             return Response(token.key)
-        else :
+        else:
             return Response("no matching data in database")
-        
+
+
 @api_view(['POST'])
 def login(request):
-    usre_name = request.data['username']
-    password = request.data['password']
-    user = authenticate(username=usre_name, password=password)
-    if user is not None:
-        token = Token.objects.get(user_id=user)
-        return Response({
-            token.key,
-        })
-    else:
+    username = request.data.get("username")
+    password = request.data.get("password")
+    try:
+        user = authenticate(username=username, password=password)
+        if user is not None:
+            token = Token.objects.get(user_id=user)
+            return Response(token.key)
+        else:
+            return Response("Incorrect username or password")
+    except:
         return Response("Incorrect username or password")
-    
+
+
 @authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
-@permission_classes([IsAuthenticated])  
+@permission_classes([IsAuthenticated])
 @api_view(['post'])
 def adding_realstate(request):
-    current_user= User.objects.get(id=request.user.id)
-    user_data=userInfo.objects.get(user=current_user)
+    current_user = User.objects.get(id=request.user.id)
+    user_data = userInfo.objects.get(user=current_user)
     added_estate = real_estate(
         addvertiser=current_user,
         estate_name=request.data["estate_name"],
@@ -97,174 +106,185 @@ def adding_realstate(request):
     added_estate.save()
     return Response("Done")
 
+
 @authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
-@permission_classes([IsAuthenticated])  
+@permission_classes([IsAuthenticated])
 @api_view(['post'])
 def defalute_filttered_estate(request):
-    current_user= User.objects.get(id=request.user.id)
-    user_data=userInfo.objects.get(user=current_user)
-    user_state=user_data.state
-    user_city=user_data.city
-    filtter_type_and_location= real_estate.objects.filter(estate_status="Accepted",state=user_state,city=user_city,estate_type=request.data["estate_type"],)
-    data =[]
+    current_user = User.objects.get(id=request.user.id)
+    user_data = userInfo.objects.get(user=current_user)
+    user_state = user_data.state
+    user_city = user_data.city
+    filtter_type_and_location = real_estate.objects.filter(
+        estate_status="Accepted", state=user_state, city=user_city, estate_type=request.data["estate_type"],)
+    data = []
     for x in filtter_type_and_location:
         field = {
-                "estate_image1":x.estate_image1,
-                "estate_name":x.estate_name,
-                "price":x.price,
-                "number_of_facilities":x.number_of_facilities,
-            }
+            "estate_image1": x.estate_image1,
+            "estate_name": x.estate_name,
+            "price": x.price,
+            "number_of_facilities": x.number_of_facilities,
+        }
         data.append(field)
     return Response(data)
 
+
 @authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
-@permission_classes([IsAuthenticated])  
+@permission_classes([IsAuthenticated])
 @api_view(['post'])
 def type_filttered_estate(request):
-    filtter_type_and_location= real_estate.objects.filter(estate_status="Accepted",estate_type=request.data["estate_type"],)
-    data =[]
+    filtter_type_and_location = real_estate.objects.filter(
+        estate_status="Accepted", estate_type=request.data["estate_type"],)
+    data = []
     for x in filtter_type_and_location:
         field = {
-                "estate_image1":x.estate_image1,
-                "estate_name":x.estate_name,
-                "price":x.price,
-                "number_of_facilities":x.number_of_facilities,
-            }
+            "estate_image1": x.estate_image1,
+            "estate_name": x.estate_name,
+            "price": x.price,
+            "number_of_facilities": x.number_of_facilities,
+        }
         data.append(field)
     return Response(data)
 
+
 @authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
-@permission_classes([IsAuthenticated])  
+@permission_classes([IsAuthenticated])
 @api_view(['post'])
 def city_filttered_estate(request):
-    filtter_type_and_location= real_estate.objects.filter(estate_status="Accepted",city=request.data["city"],)
-    data =[]
+    filtter_type_and_location = real_estate.objects.filter(
+        estate_status="Accepted", city=request.data["city"],)
+    data = []
     for x in filtter_type_and_location:
         field = {
-                "estate_image1":x.estate_image1,
-                "estate_name":x.estate_name,
-                "price":x.price,
-                "number_of_facilities":x.number_of_facilities,
-            }
+            "estate_image1": x.estate_image1,
+            "estate_name": x.estate_name,
+            "price": x.price,
+            "number_of_facilities": x.number_of_facilities,
+        }
         data.append(field)
     return Response(data)
 
+
 @authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
-@permission_classes([IsAuthenticated])  
+@permission_classes([IsAuthenticated])
 @api_view(['post'])
 def state_filttered_estate(request):
-    filtter_type_and_location= real_estate.objects.filter(estate_status="Accepted",state=request.data["state"],)
-    data =[]
+    filtter_type_and_location = real_estate.objects.filter(
+        estate_status="Accepted", state=request.data["state"],)
+    data = []
     for x in filtter_type_and_location:
         field = {
-                "estate_image1":x.estate_image1,
-                "estate_name":x.estate_name,
-                "price":x.price,
-                "number_of_facilities":x.number_of_facilities,
-            }
+            "estate_image1": x.estate_image1,
+            "estate_name": x.estate_name,
+            "price": x.price,
+            "number_of_facilities": x.number_of_facilities,
+        }
         data.append(field)
     return Response(data)
 
+
 @authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
-@permission_classes([IsAuthenticated])  
+@permission_classes([IsAuthenticated])
 @api_view(['post'])
 def city_state_price(request):
-    current_user= User.objects.get(id=request.user.id)
-    user_data=userInfo.objects.get(user=current_user)
-    user_state=user_data.state
-    user_city=user_data.city
-    filtter_type_and_location= real_estate.objects.filter(estate_status="Accepted",state=user_state,city=user_city,estate_type=request.data["estate_type"],price=request.data["price"])
-    data =[]
+    current_user = User.objects.get(id=request.user.id)
+    user_data = userInfo.objects.get(user=current_user)
+    user_state = user_data.state
+    user_city = user_data.city
+    filtter_type_and_location = real_estate.objects.filter(
+        estate_status="Accepted", state=user_state, city=user_city, estate_type=request.data["estate_type"], price=request.data["price"])
+    data = []
     for x in filtter_type_and_location:
         field = {
-                "estate_image1":x.estate_image1,
-                "estate_name":x.estate_name,
-                "price":x.price,
-                "number_of_facilities":x.number_of_facilities,
-            }
+            "estate_image1": x.estate_image1,
+            "estate_name": x.estate_name,
+            "price": x.price,
+            "number_of_facilities": x.number_of_facilities,
+        }
         data.append(field)
     return Response(data)
 
+
 @authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
-@permission_classes([IsAuthenticated])  
+@permission_classes([IsAuthenticated])
 @api_view(['get'])
 def getting_states(request):
-    filtter_type_and_location= real_estate.objects.all()
-    data =[]
+    filtter_type_and_location = real_estate.objects.all()
+    data = []
     for x in filtter_type_and_location:
         field = {
-                "addvertiser":x.addvertiser.username,
-                "owner_national_number":x.owner_national_number,
-                "estate_name":x.estate_name,
-                "price":x.price,
-                "number_of_facilities":x.number_of_facilities,
-                "estate_description":x.estate_description,
-                "estate_type":x.estate_type,
-                "state":x.state,
-                "city":x.city,
-                "location":x.location,
-                "map_location":x.map_location,
-                "estate_status":x.estate_status,
-                "estate_image":x.estate_image1,
-                "estate_image2":x.estate_image2,
-                "estate_image3":x.estate_image3,
-            }
+            "addvertiser": x.addvertiser.username,
+            "owner_national_number": x.owner_national_number,
+            "estate_name": x.estate_name,
+            "price": x.price,
+            "number_of_facilities": x.number_of_facilities,
+            "estate_description": x.estate_description,
+            "estate_type": x.estate_type,
+            "state": x.state,
+            "city": x.city,
+            "location": x.location,
+            "map_location": x.map_location,
+            "estate_status": x.estate_status,
+            "estate_image": x.estate_image1,
+            "estate_image2": x.estate_image2,
+            "estate_image3": x.estate_image3,
+        }
         data.append(field)
     return Response(data)
 
 
 @authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
-@permission_classes([IsAuthenticated])  
+@permission_classes([IsAuthenticated])
 @api_view(['post'])
 def getting_my_estate(request):
-    current_user= User.objects.get(id=request.user.id)
-    filtter_type_and_location= real_estate.objects.filter(addvertiser=current_user)
-    data =[]
+    current_user = User.objects.get(id=request.user.id)
+    filtter_type_and_location = real_estate.objects.filter(
+        addvertiser=current_user)
+    data = []
     for x in filtter_type_and_location:
         field = {
-                "estate_name":x.estate_name,
-                "price":x.price,
-                "number_of_facilities":x.number_of_facilities,
-                "estate_type":x.estate_type,
-                "state":x.state,
-                "city":x.city,
-                "location":x.location,
-                "estate_description":x.estate_description,
-                "estate_status":x.estate_status,
-                "estate_image1":x.estate_image1,
-                "estate_image2":x.estate_image2,
-                "estate_image3":x.estate_image3,
-            }
+            "estate_name": x.estate_name,
+            "price": x.price,
+            "number_of_facilities": x.number_of_facilities,
+            "estate_type": x.estate_type,
+            "state": x.state,
+            "city": x.city,
+            "location": x.location,
+            "estate_description": x.estate_description,
+            "estate_status": x.estate_status,
+            "estate_image1": x.estate_image1,
+            "estate_image2": x.estate_image2,
+            "estate_image3": x.estate_image3,
+        }
         data.append(field)
     return Response(data)
 
+
 @authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
-@permission_classes([IsAuthenticated])  
+@permission_classes([IsAuthenticated])
 @api_view(['post'])
 def delete_my_estate(request):
-    current_user= User.objects.get(id=request.user.id)
-    filtter_my_estates= real_estate.objects.filter(addvertiser=current_user)
+    current_user = User.objects.get(id=request.user.id)
+    filtter_my_estates = real_estate.objects.filter(addvertiser=current_user)
     filtter_my_estates.get(id=request.data["id"]).delete()
     return Response("estate succefully deleted")
 
+
 @authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
-@permission_classes([IsAuthenticated])  
+@permission_classes([IsAuthenticated])
 @api_view(['post'])
 def accept_estate(request):
-    estates= real_estate.objects.get(id=request.data["id"])
-    estates.estate_status="Accepted"
+    estates = real_estate.objects.get(id=request.data["id"])
+    estates.estate_status = "Accepted"
     estates.save()
     return Response("Accepted")
 
+
 @authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
-@permission_classes([IsAuthenticated])  
+@permission_classes([IsAuthenticated])
 @api_view(['post'])
 def reject_estate(request):
-    estates= real_estate.objects.get(id=request.data["id"])
-    estates.estate_status="Rejected"
+    estates = real_estate.objects.get(id=request.data["id"])
+    estates.estate_status = "Rejected"
     estates.save()
     return Response("Rejected")
-
-
-
-
