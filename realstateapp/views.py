@@ -1,8 +1,10 @@
 import logging
 from rest_framework.response import Response
+
+from realstateapp.helpers import custom_response
 from .serializer import *
 from .models import *
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
@@ -80,11 +82,11 @@ def login(request):
         user = authenticate(username=username, password=password)
         if user is not None:
             token = Token.objects.get(user_id=user)
-            return Response(token.key)
+            return custom_response(data={'token': token.key})
         else:
-            return Response("Incorrect username or password")
+            return custom_response(error="NOT_FOUND", message="User Not Found")
     except:
-        return Response("Incorrect username or password")
+        return custom_response(error="AUTH_FAILURE", message="Authentication Failure")
 
 
 @authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
