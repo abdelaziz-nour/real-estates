@@ -66,9 +66,14 @@ def register(request):
                 info_user.user = user
                 info_user.save()
                 token = Token.objects.create(user=user)
-                return Response(token.key)
+                return custom_response(data={'token': token.key, 'info_user': info_user})
+
             else:
-                return Response("no matching data in database")
+                return custom_response(
+                    error="NOT_FOUND_IN_CV",
+                    message="User Data Not Found In Civilian Registry"
+                )
+
     except BaseException as exception:
         logging.warning(f"Exception Name: {type(exception).__name__}")
         logging.warning(f"Exception Desc: {exception}")
@@ -82,7 +87,8 @@ def login(request):
         user = authenticate(username=username, password=password)
         if user is not None:
             token = Token.objects.get(user_id=user)
-            return custom_response(data={'token': token.key})
+            info_user = userInfo.objects.get(user=user)
+            return custom_response(data={'token': token.key, "info_user": info_user})
         else:
             return custom_response(error="NOT_FOUND", message="User Not Found")
     except:
