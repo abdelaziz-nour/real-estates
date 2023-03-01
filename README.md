@@ -1,6 +1,6 @@
 
 Run the following commands
 
-`source RealStateENV/bin/activate`
+`source RealEstateENV/bin/activate`
 
 `pip install -r requirements.txt`
