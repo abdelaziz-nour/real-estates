@@ -3,10 +3,11 @@
 from django.http import JsonResponse
 
 
-def custom_response(data=None, error=None, message=None):
+def custom_response(data=None, success=False, message=None):
     return JsonResponse(
         {
             'data': data,
-            "message": message
+            'success': success,
+            'message': message,
         }
     )

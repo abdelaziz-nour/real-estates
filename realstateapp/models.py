@@ -9,10 +9,16 @@ class userInfo(models.Model):
     second_name = models.CharField(max_length=25, blank=False, null=False)
     thired_name = models.CharField(max_length=25, blank=False, null=False)
     forth_name = models.CharField(max_length=25, blank=False, null=False)
-    national_number = models.IntegerField(blank=False, null=False, unique=True)
-    phone = models.IntegerField(blank=False, null=False)
-    email = models.CharField(max_length=25, blank=False, null=False)
-    username = models.CharField(max_length=25, blank=False, null=False)
+
+    national_number = models.CharField(
+        max_length=16, blank=False, null=False, unique=True)
+    phone = models.CharField(
+        max_length=16, blank=False, null=False, unique=True)
+    email = models.CharField(
+        max_length=32, blank=False, null=False, unique=True)
+    username = models.CharField(
+        max_length=25, blank=False, null=False, unique=True)
+
     password = models.CharField(max_length=25, blank=False, null=False)
     state = models.CharField(max_length=25, blank=False, null=False)
     city = models.CharField(max_length=25, blank=False, null=False)
@@ -26,7 +32,8 @@ class civil_registry(models.Model):
     second_name = models.CharField(max_length=25, blank=False, null=False)
     thired_name = models.CharField(max_length=25, blank=False, null=False)
     forth_name = models.CharField(max_length=25, blank=False, null=False)
-    national_number = models.IntegerField(blank=False, null=False)
+    national_number = models.CharField(
+        max_length=16, blank=False, null=False, unique=True)
 
     def __str__(self,):
         return str(self.first_name)
@@ -40,17 +47,18 @@ class real_estate(models.Model):
     estate_description = models.CharField(
         max_length=25, blank=False, null=False)
     owner_national_number = models.IntegerField(blank=False, null=False)
-    estate_types = [('apartment for rent', 'apartment for rent'),
-                    ('apartment for sell', 'apartment for sell'),
-                    ('house for rent', 'house for rent'),
-                    ('house for sell', 'house for sell'),
-                    ('villa for rent', 'villa for rent'),
-                    ('villa for sell', 'villa for sell'),
-                    ('land for sell', 'land for sell'),
-                    ('bulding for sell', 'building for sell'),
-                    ('store for rent', 'store for rent'),
-                    ('office for rent', 'office for rent'),
-                    ]
+    estate_types = [
+        ('apartment for rent', 'apartment for rent'),
+        ('apartment for sell', 'apartment for sell'),
+        ('house for rent', 'house for rent'),
+        ('house for sell', 'house for sell'),
+        ('villa for rent', 'villa for rent'),
+        ('villa for sell', 'villa for sell'),
+        ('land for sell', 'land for sell'),
+        ('bulding for sell', 'building for sell'),
+        ('store for rent', 'store for rent'),
+        ('office for rent', 'office for rent'),
+    ]
     estate_type = models.CharField(
         max_length=25, blank=False, null=False, choices=estate_types)
     number_of_facilities = models.IntegerField(blank=False, null=False)

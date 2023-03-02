@@ -29,7 +29,7 @@ def index(request):
 def register(request):
 
     serializer = RegisterSerializer(data=request.data)
-    print("test")
+
     try:
         if serializer.is_valid(raise_exception=True):
 
@@ -59,15 +59,28 @@ def register(request):
                 national_number=request.data["national_number"],
             )
             if registry:
+
                 user = User.objects.create_user(
                     email=request.data["email"],
                     username=request.data["username"],
                     password=request.data["password"],
                 )
-                info_user.user = user
-                info_user.save()
-                token = Token.objects.create(user=user)
-                return custom_response(data={'token': token.key, 'info_user': info_user})
+                try:
+                    info_user.user = user
+                    info_user.save()
+                    token = Token.objects.create(user=user)
+                    return custom_response(
+                        data={
+                            'token': token.key,
+                            'info_user': model_to_dict(info_user)
+                        },
+                        success=True,)
+
+                except BaseException as exception:
+                    logging.warning(
+                        f"Exception Name: {type(exception).__name__}")
+                    logging.warning(f"Exception Desc: {exception}")
+                    return custom_response(message="User did not created")
 
             else:
                 return custom_response(message="User Data Not Found In Civilian Registry")
@@ -85,8 +98,8 @@ def login(request):
         user = authenticate(username=username, password=password)
         if user is not None:
             token = Token.objects.get(user_id=user)
-            info_user = model_to_dict(userInfo.objects.get(user=user))
-            return custom_response(data={'token': token.key, "info_user": info_user})
+            info_user = userInfo.objects.get(user=user)
+            return custom_response(data={'token': token.key, "info_user": model_to_dict(info_user)}, success=True)
         else:
             return custom_response(message="User Not Found")
     except BaseException as exception:
@@ -99,30 +112,32 @@ def login(request):
 @permission_classes([IsAuthenticated])
 @api_view(['post'])
 def adding_realstate(request):
+    if(request.user.is_authenticated):
+        current_user = User.objects.get(id=request.user.id)
+        user_data = userInfo.objects.get(user=current_user)
+        added_estate = real_estate(
+            addvertiser=current_user,
+            estate_name=request.data["estate_name"],
+            estate_description=request.data["estate_description"],
+            owner_national_number=user_data.national_number,
+            estate_type=request.data["estate_type"],
+            number_of_facilities=request.data["number_of_facilities"],
+            state=request.data["state"],
+            city=request.data["city"],
+            location=request.data["location"],
+            authentication_image=request.FILES["authentication_image"],
+            estate_image1=request.FILES["estate_image1"],
+            estate_image2=request.FILES["estate_image2"],
+            estate_image3=request.FILES["estate_image3"],
+            map_location=request.data["map_location"],
+            price=request.data["price"],
+        )
+        added_estate.save()
 
-    print(request.user.is_authenticated)
-    # print(request.data['addvertiser'])
-    # current_user = User.objects.get(id=request.user.id)
-    # user_data = userInfo.objects.get(user=current_user)
-    # added_estate = real_estate(
-    #     addvertiser=current_user,
-    #     estate_name=request.data["estate_name"],
-    #     estate_description=request.data["estate_description"],
-    #     owner_national_number=user_data.national_number,
-    #     estate_type=request.data["estate_type"],
-    #     number_of_facilities=request.data["number_of_facilities"],
-    #     state=request.data["state"],
-    #     city=request.data["city"],
-    #     location=request.data["location"],
-    #     authentication_image=request.FILES["authentication_image"],
-    #     estate_image1=request.FILES["estate_image1"],
-    #     estate_image2=request.FILES["estate_image2"],
-    #     estate_image3=request.FILES["estate_image3"],
-    #     map_location=request.data["map_location"],
-    #     price=request.data["price"],
-    # )
-    # added_estate.save()
-    return Response("Done")
+        return custom_response(success=True)
+
+    else:
+        return custom_response(message="Authentication Failure")
 
 
 @authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
