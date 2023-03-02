@@ -1,0 +1,4 @@
+RealEstateENV/
+realstates/__pycache__/*
+realstateapp/__pycache__/*
+realstateapp/migrations/__pycache__/*
