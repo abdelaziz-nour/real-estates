@@ -4,19 +4,29 @@ from . import views
 
 urlpatterns = [
     path('index', views.index, name='index'),
+
+    # authentication
     path('register', views.register),
     path('login', views.login),
-    path('adding_estate', views.adding_realstate),
-    path('defalute_filttered_estate', views.defalute_filttered_estate),
-    path('type_filttered_estate', views.type_filttered_estate),
-    path('getting_states', views.getting_states),
-    path('getting_my_estate', views.getting_my_estate),
-    path('city_filttered_estate', views.city_filttered_estate),
-    path('state_filttered_estate', views.state_filttered_estate),
-    path('city_state_price', views.city_state_price),
+
+    # All Real Estate
+    path('get_real_estates', views.get_real_estates),
+
+    # user interaction
+    path('adding_real_estate', views.adding_real_estate),
+    path('getting_my_estate', views.my_real_estate),
     path('delete_my_estate', views.delete_my_estate),
-    path('accept_estate', views.accept_estate),
-    path('reject_estate', views.reject_estate),
-    
+
+    # Filters
+    path('default_filtered_estate', views.default_filtered_estate),
+    path('type_filtered_estate', views.type_filtered_estate),
+    path('state_filtered_estate', views.state_filtered_estate),
+    path('city_filtered_estate', views.city_filtered_estate),
+    path('city_state_price', views.city_state_price),
+
+
+    # Admin interaction
+    path('accept_estate', views.accept_real_estate),
+    path('reject_estate', views.reject_real_estate),
 
 ]
