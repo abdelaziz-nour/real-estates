@@ -2,69 +2,74 @@ from django.db import models
 from django.contrib.auth.models import User
 # Create your models here.
 
-class userInfo(models.Model):
-    user=models.OneToOneField(User,on_delete=models.CASCADE,blank=True)
-    first_name=models.CharField(max_length=25,blank=False,null=False)
-    second_name=models.CharField(max_length=25,blank=False,null=False)
-    thired_name=models.CharField(max_length=25,blank=False,null=False)
-    forth_name=models.CharField(max_length=25,blank=False,null=False)
-    national_number=models.IntegerField(blank=False,null=False,unique=True)
-    phone=models.IntegerField(blank=False,null=False)
-    email=models.CharField(max_length=25,blank=False,null=False)
-    username=models.CharField(max_length=25,blank=False,null=False)
-    password=models.CharField(max_length=25,blank=False,null=False)
-    state=models.CharField(max_length=25,blank=False,null=False)
-    city=models.CharField(max_length=25,blank=False,null=False)
+
+class UserInfo(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, blank=True)
+    firstName = models.CharField(max_length=25, blank=False, null=False)
+    secondName = models.CharField(max_length=25, blank=False, null=False)
+    thirdName = models.CharField(max_length=25, blank=False, null=False)
+    forthName = models.CharField(max_length=25, blank=False, null=False)
+
+    nationalID = models.CharField(max_length=16, blank=False, null=False, unique=True)
+    phone = models.CharField(max_length=16, blank=False, null=False, unique=True)
+    state = models.CharField(max_length=25, blank=False, null=False)
+    city = models.CharField(max_length=25, blank=False, null=False)
+
     def __str__(self,):
         return str(self.user.username)
-    
-class civil_registry(models.Model):
-    first_name=models.CharField(max_length=25,blank=False,null=False)
-    second_name=models.CharField(max_length=25,blank=False,null=False)
-    thired_name=models.CharField(max_length=25,blank=False,null=False)
-    forth_name=models.CharField(max_length=25,blank=False,null=False)
-    national_number=models.IntegerField(blank=False,null=False)
-    
+
+
+class CivilRegistry(models.Model):
+    firstName = models.CharField(max_length=25, blank=False, null=False)
+    secondName = models.CharField(max_length=25, blank=False, null=False)
+    thirdName = models.CharField(max_length=25, blank=False, null=False)
+    forthName = models.CharField(max_length=25, blank=False, null=False)
+    nationalID = models.CharField(max_length=16, blank=False, null=False, unique=True)
 
     def __str__(self,):
-        return str(self.first_name)
-    
-class real_estate(models.Model):
-    addvertiser = models.ForeignKey(User, on_delete=models.CASCADE)
-    estate_name=models.CharField(max_length=25,blank=False,null=False)#
-    authentication_image=models.ImageField(upload_to=None, height_field=None, width_field=None, max_length=None)
-    estate_description=models.CharField(max_length=25,blank=False,null=False)
-    owner_national_number=models.IntegerField(blank=False,null=False)
-    estate_types=[('apartment for rent','apartment for rent'),
-                  ('apartment for sell','apartment for sell'),
-                  ('house for rent','house for rent'),
-                  ('house for sell','house for sell'),
-                  ('villa for rent','villa for rent'),
-                  ('villa for sell','villa for sell'),
-                  ('land for sell','land for sell'),
-                  ('bulding for sell','building for sell'),
-                  ('store for rent','store for rent'),
-                  ('office for rent','office for rent'),
-                  ]
-    estate_type=models.CharField(max_length=25,blank=False,null=False,choices=estate_types)
-    number_of_facilities=models.IntegerField(blank=False,null=False)#
-    state=models.CharField(max_length=25,blank=False,null=False)
-    city=models.CharField(max_length=25,blank=False,null=False)
-    location=models.TextField (blank=False,null=False)
-    optional_details =models.TextField(blank=True,null=True)
-    price=models.IntegerField(blank=False,null=False)
-    estate_statuses=[('Waitting','Waitting'),
-                  ('Accepted','Accepted'),
-                  ('Rejected','Rejected')
-                  ]
-    estate_status=models.CharField(max_length=25,blank=False,null=False,choices=estate_statuses,default="Waitting")
-    estate_image1=models.ImageField(upload_to=None, height_field=None, width_field=None, max_length=None)
-    estate_image2=models.ImageField(upload_to=None, height_field=None, width_field=None, max_length=None)
-    estate_image3=models.ImageField(upload_to=None, height_field=None, width_field=None, max_length=None)
-    map_location=models.CharField(max_length=255,blank=False,null=False)
+        return str(self.firstName)
 
 
-    def __str__(self,):
-        return str(self.estate_name)
-    
+class RealEstate(models.Model):
+    advertiser = models.ForeignKey(User, on_delete=models.CASCADE)
+    title = models.CharField(max_length=25, blank=False, null=False)
+    description = models.CharField(max_length=25, blank=False, null=False)
+    nationalID = models.IntegerField(blank=False, null=False)
 
+    types = [
+        ('Land', 'Land'),
+        ('Farm', 'Farm'),
+        ('House', 'House'),
+        ('Villa', 'Villa'),
+        ('Store', 'Store'),
+        ('Office', 'Office'),
+        ('Building', 'Building'),
+        ('Apartment', 'Apartment'),
+    ]
+    type = models.CharField(max_length=25, blank=False, null=False, choices=types)
+
+    operations = [('Rent', 'Rent'), ('Sell', 'Sell'),]
+    operation = models.CharField(max_length=25, blank=False, null=False, choices=operations)
+
+    facilitiesNum = models.IntegerField(blank=False, null=False)
+    state = models.CharField(max_length=25, blank=False, null=False)
+    city = models.CharField(max_length=25, blank=False, null=False)
+    location = models.TextField(blank=False, null=False)
+    price = models.IntegerField(blank=False, null=False)
+
+    approval_states = [('Waiting', 'Waiting'), ('Accepted', 'Accepted'), ('Rejected', 'Rejected')]
+    approval = models.CharField(max_length=25, blank=False, null=False, choices=approval_states, default="Waiting")
+
+    def __str__(self):
+        return str(self.title)
+
+
+class Image(models.Model):
+    realEstate = models.ForeignKey(RealEstate, on_delete=models.CASCADE)
+    image = models.ImageField(upload_to=None, height_field=None, width_field=None, max_length=None)
+
+    types = [("Proof", "Proof"), ("View", "View")]
+    type = models.CharField(max_length=8, blank=False, null=False, choices=types, default="View")
+
+    def __str__(self):
+        return str(self.realEstate.title + " - " + str(self.realEstate.pk))
