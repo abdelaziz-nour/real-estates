@@ -29,25 +29,23 @@ def index(request):
 def register(request):
 
     serializer = RegisterSerializer(data=request.data)
-
     try:
         if serializer.is_valid(raise_exception=True):
 
-            info_user = UserInfo(
+            user_info = UserInfo(
+                nationalID=request.data["nationalID"],
                 firstName=request.data["firstName"],
                 secondName=request.data["secondName"],
                 thirdName=request.data["thirdName"],
                 forthName=request.data["forthName"],
-                nationalID=request.data["nationalID"],
                 phone=request.data["phone"],
                 state=request.data["state"],
                 city=request.data["city"],
             )
-
         else:
-            return Response("wrong data entries")
+            return custom_response(message="wrong data entries")
 
-        if info_user:
+        if user_info:
             registry = CivilRegistry.objects.filter(
                 firstName=request.data["firstName"],
                 secondName=request.data["secondName"],
@@ -55,36 +53,41 @@ def register(request):
                 forthName=request.data["forthName"],
                 nationalID=request.data["nationalID"],
             )
-            if registry:
+        else:
+            return custom_response(message="test")
 
-                user = User.objects.create_user(
-                    email=request.data["email"],
-                    username=request.data["phone"],
-                    password=request.data["password"],
-                )
-                try:
-                    info_user.user = user
-                    info_user.save()
-                    token = Token.objects.create(user=user)
-                    return custom_response(
-                        data={
-                            'token': token.key,
-                            'info_user': model_to_dict(info_user)
-                        },
-                        success=True,
-                    )
+        if registry:
+            user = User.objects.create_user(
+                email=request.data["email"],
+                username=request.data["phone"],
+                password=request.data["password"],
+            )
 
-                except BaseException as exception:
-                    logging.warning(f"Exception Name: {type(exception).__name__}")
-                    logging.warning(f"Exception Desc: {exception}")
-                    return custom_response(message="User did not created")
+        else:
+            return custom_response(message="User is not found in civil registry")
 
-            else:
-                return custom_response(message="User Data Not Found In Civilian Registry")
+        if user:
+            user_info.user = user
+            user_info.save()
+            token = Token.objects.create(user=user)
+
+            user_info = model_to_dict(user_info)
+            user_info['email'] = model_to_dict(user).get("email")
+
+            return custom_response(
+                data={
+                    'token': token.key,
+                    'info_user': user_info,
+                },
+                success=True,
+            )
+        else:
+            return custom_response(message="User account not created")
 
     except BaseException as exception:
         logging.warning(f"Exception Name: {type(exception).__name__}")
         logging.warning(f"Exception Desc: {exception}")
+        return custom_response(message="something went wrong")
 
 
 @api_view(['POST'])
@@ -291,31 +294,34 @@ def get_real_estates(request):
 
 @authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
 @permission_classes([IsAuthenticated])
-@api_view(['post'])
+@api_view(['GET'])
 def my_real_estate(request):
 
     current_user = User.objects.get(id=request.user.id)
-    filter_type_and_location = RealEstate.objects.filter(advertiser=current_user)
+    filtered_by_user = RealEstate.objects.filter(advertiser=current_user)
 
     data = []
-    for x in filter_type_and_location:
+    for realEstate in filtered_by_user:
+
+        images = Image.objects.filter(realEstate=realEstate)
+
         field = {
-            "title": x.title,
-            "price": x.price,
-            "facilitiesNum": x.facilitiesNum,
-            "type": x.type,
-            "operation": x.operation,
-            "state": x.state,
-            "city": x.city,
-            "location": x.location,
-            "description": x.description,
-            "approval": x.approval,
-            "image1": x.image1,
-            "image2": x.image2,
-            "image3": x.image3,
+            "id": realEstate.pk,
+            "title": realEstate.title,
+            "price": realEstate.price,
+            "facilitiesNum": realEstate.facilitiesNum,
+            "type": realEstate.type,
+            "operation": realEstate.operation,
+            "state": realEstate.state,
+            "city": realEstate.city,
+            "location": realEstate.location,
+            "description": realEstate.description,
+            "approval": realEstate.approval,
+            "images": [{"url": str(image.image), "type": image.type} for image in images],
         }
         data.append(field)
-    return Response(data)
+
+    return custom_response(data={'data': data}, success=True)
 
 
 @authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
@@ -325,7 +331,7 @@ def delete_my_estate(request):
     current_user = User.objects.get(id=request.user.id)
     filter_my_estates = RealEstate.objects.filter(advertiser=current_user)
     filter_my_estates.get(id=request.data["id"]).delete()
-    return Response("Real estate successfully deleted")
+    return custom_response(success=True, message="Real estate successfully deleted")
 
 
 @authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
@@ -335,7 +341,7 @@ def accept_real_estate(request):
     estates = RealEstate.objects.get(id=request.data["id"])
     estates.approval = "Accepted"
     estates.save()
-    return Response("Accepted")
+    return custom_response(success=True, message="Rejected")
 
 
 @authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
@@ -345,4 +351,4 @@ def reject_real_estate(request):
     estates = RealEstate.objects.get(id=request.data["id"])
     estates.approval = "Rejected"
     estates.save()
-    return Response("Rejected")
+    return custom_response(success=True, message="Rejected")
