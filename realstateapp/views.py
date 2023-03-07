@@ -114,6 +114,43 @@ def login(request):
         logging.warning(f"Exception Desc: {exception}")
         return custom_response(message="Authentication Failure")
 
+# ====================
+
+
+@ authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
+@ permission_classes([IsAuthenticated])
+@ api_view(['get'])
+def get_real_estates(request):
+    filter_type_and_location = RealEstate.objects.all()
+
+    data = []
+    for realEstate in filter_type_and_location:
+
+        images = Image.objects.filter(realEstate=realEstate)
+
+        field = {
+            "id": realEstate.pk,
+            "advertiser": realEstate.advertiser.id,
+            "nationalID": str(realEstate.nationalID),
+            "title": realEstate.title,
+            "price": str(realEstate.price),
+            "facilitiesNum": str(realEstate.facilitiesNum),
+            "description": realEstate.description,
+            "type": realEstate.type,
+            "operation": realEstate.operation,
+            "state": realEstate.state,
+            "city": realEstate.city,
+            "location": realEstate.location,
+            "approval": realEstate.approval,
+            "images": [{"url": str(image.image), "type": image.type} for image in images],
+        }
+        data.append(field)
+
+    return custom_response(data={'data': data}, success=True)
+
+
+# =====================
+
 
 @authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
 @permission_classes([IsAuthenticated])
@@ -140,12 +177,10 @@ def adding_real_estate(request):
 
             newRealEstate.save()
             for image in request.data.getlist('images'):
-                Image(realEstate=newRealEstate,
-                      image=image, type="View").save()
+                Image(realEstate=newRealEstate, image=image, type="View").save()
 
             for image in request.data.getlist('ownerShipProof'):
-                Image(realEstate=newRealEstate,
-                      image=image, type="Proof").save()
+                Image(realEstate=newRealEstate, image=image, type="Proof").save()
 
             return custom_response(success=True)
 
@@ -154,6 +189,54 @@ def adding_real_estate(request):
             logging.warning(f"Exception Desc: {exception}")
 
     else:
+        return custom_response(message="Authentication Failure")
+
+
+@ authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
+@ permission_classes([IsAuthenticated])
+@ api_view(['GET'])
+def my_real_estate(request):
+
+    current_user = User.objects.get(id=request.user.id)
+    filtered_by_user = RealEstate.objects.filter(advertiser=current_user)
+
+    data = []
+    for realEstate in filtered_by_user:
+
+        images = Image.objects.filter(realEstate=realEstate)
+
+        field = {
+            "id": realEstate.pk,
+            "title": realEstate.title,
+            "price": realEstate.price,
+            "facilitiesNum": realEstate.facilitiesNum,
+            "type": realEstate.type,
+            "operation": realEstate.operation,
+            "state": realEstate.state,
+            "city": realEstate.city,
+            "location": realEstate.location,
+            "description": realEstate.description,
+            "approval": realEstate.approval,
+            "images": [{"url": str(image.image), "type": image.type} for image in images],
+        }
+        data.append(field)
+
+    return custom_response(data={'data': data}, success=True)
+
+
+@ authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
+@ permission_classes([IsAuthenticated])
+@ api_view(['post'])
+def delete_my_estate(request):
+    try:
+        current_user = User.objects.get(id=request.user.id)
+        filter_my_estates = RealEstate.objects.filter(advertiser=current_user)
+        filter_my_estates.get(id=request.data["id"]).delete()
+        return custom_response(success=True, message="Real estate successfully deleted")
+
+    except BaseException as exception:
+        logging.warning(f"Exception Name: {type(exception).__name__}")
+        logging.warning(f"Exception Desc: {exception}")
         return custom_response(message="Authentication Failure")
 
 
@@ -282,86 +365,6 @@ def filters_values(request):
                 "maxPrice": max_price['price__max'],
             }
         )
-
-
-@ authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
-@ permission_classes([IsAuthenticated])
-@ api_view(['get'])
-def get_real_estates(request):
-    filter_type_and_location = RealEstate.objects.all()
-
-    data = []
-    for realEstate in filter_type_and_location:
-
-        images = Image.objects.filter(realEstate=realEstate)
-
-        field = {
-            "id": realEstate.pk,
-            "advertiser": realEstate.advertiser.id,
-            "nationalID": str(realEstate.nationalID),
-            "title": realEstate.title,
-            "price": str(realEstate.price),
-            "facilitiesNum": str(realEstate.facilitiesNum),
-            "description": realEstate.description,
-            "type": realEstate.type,
-            "operation": realEstate.operation,
-            "state": realEstate.state,
-            "city": realEstate.city,
-            "location": realEstate.location,
-            "approval": realEstate.approval,
-            "images": [{"url": str(image.image), "type": image.type} for image in images],
-        }
-        data.append(field)
-
-    return custom_response(data={'data': data}, success=True)
-
-
-@ authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
-@ permission_classes([IsAuthenticated])
-@ api_view(['GET'])
-def my_real_estate(request):
-
-    current_user = User.objects.get(id=request.user.id)
-    filtered_by_user = RealEstate.objects.filter(advertiser=current_user)
-
-    data = []
-    for realEstate in filtered_by_user:
-
-        images = Image.objects.filter(realEstate=realEstate)
-
-        field = {
-            "id": realEstate.pk,
-            "title": realEstate.title,
-            "price": realEstate.price,
-            "facilitiesNum": realEstate.facilitiesNum,
-            "type": realEstate.type,
-            "operation": realEstate.operation,
-            "state": realEstate.state,
-            "city": realEstate.city,
-            "location": realEstate.location,
-            "description": realEstate.description,
-            "approval": realEstate.approval,
-            "images": [{"url": str(image.image), "type": image.type} for image in images],
-        }
-        data.append(field)
-
-    return custom_response(data={'data': data}, success=True)
-
-
-@ authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
-@ permission_classes([IsAuthenticated])
-@ api_view(['post'])
-def delete_my_estate(request):
-    try:
-        current_user = User.objects.get(id=request.user.id)
-        filter_my_estates = RealEstate.objects.filter(advertiser=current_user)
-        filter_my_estates.get(id=request.data["id"]).delete()
-        return custom_response(success=True, message="Real estate successfully deleted")
-
-    except BaseException as exception:
-        logging.warning(f"Exception Name: {type(exception).__name__}")
-        logging.warning(f"Exception Desc: {exception}")
-        return custom_response(message="Authentication Failure")
 
 
 @ authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
