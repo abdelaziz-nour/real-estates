@@ -94,7 +94,7 @@ def register(request):
 @api_view(['POST'])
 def login(request):
     try:
-        username = request.data["username"]
+        username = request.data["phone"]
         password = request.data["password"]
         user = authenticate(username=username, password=password)
 
