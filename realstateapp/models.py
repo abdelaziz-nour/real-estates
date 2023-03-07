@@ -16,7 +16,7 @@ class UserInfo(models.Model):
     city = models.CharField(max_length=25, blank=False, null=False)
 
     def __str__(self,):
-        return str(self.user.username)
+        return str(self.firstName + " " + self.forthName)
 
 
 class CivilRegistry(models.Model):
@@ -27,13 +27,13 @@ class CivilRegistry(models.Model):
     nationalID = models.CharField(max_length=16, blank=False, null=False, unique=True)
 
     def __str__(self,):
-        return str(self.firstName)
+        return str(self.firstName + " " + self.forthName)
 
 
 class RealEstate(models.Model):
     advertiser = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=25, blank=False, null=False)
-    description = models.CharField(max_length=25, blank=False, null=False)
+    description = models.TextField(max_length=512, blank=False, null=False)
     nationalID = models.IntegerField(blank=False, null=False)
 
     types = [
@@ -48,7 +48,7 @@ class RealEstate(models.Model):
     ]
     type = models.CharField(max_length=25, blank=False, null=False, choices=types)
 
-    operations = [('Rent', 'Rent'), ('Sell', 'Sell'),]
+    operations = [('Rent', 'Rent'), ('Sell', 'Sell'), ]
     operation = models.CharField(max_length=25, blank=False, null=False, choices=operations)
 
     facilitiesNum = models.IntegerField(blank=False, null=False)

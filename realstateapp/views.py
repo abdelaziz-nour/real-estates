@@ -94,10 +94,10 @@ def register(request):
 @api_view(['POST'])
 def login(request):
     try:
-        username = request.data["phone"]
+        username = request.data["username"]
         password = request.data["password"]
         user = authenticate(username=username, password=password)
-
+        print(user)
         if user is not None:
             token = Token.objects.get(user_id=user)
             user_info = model_to_dict(UserInfo.objects.get(user=user))
@@ -289,16 +289,17 @@ def filters_values(request):
 @ api_view(['get'])
 def get_real_estates(request):
     filter_type_and_location = RealEstate.objects.filter(approval="Accepted")
-    userInfo = model_to_dict(UserInfo.objects.get(user=request.user))
-    userInfo['email'] = request.user.email
     data = []
     for realEstate in filter_type_and_location:
+        advertizer = model_to_dict(UserInfo.objects.get(user=realEstate.advertiser))
+        account = model_to_dict(User.objects.get(id=advertizer['user']))
+        advertizer['email'] = account['email']
 
         images = Image.objects.filter(realEstate=realEstate)
 
         field = {
             "id": realEstate.pk,
-            "advertiser": userInfo,
+            "advertiser": advertizer,
             "nationalID": str(realEstate.nationalID),
             "title": realEstate.title,
             "price": str(realEstate.price),
