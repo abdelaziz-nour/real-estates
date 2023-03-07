@@ -288,8 +288,9 @@ def filters_values(request):
 @ permission_classes([IsAuthenticated])
 @ api_view(['get'])
 def get_real_estates(request):
-    filter_type_and_location = RealEstate.objects.all()
-
+    filter_type_and_location = RealEstate.objects.filter(approval="Accepted")
+    userInfo = model_to_dict(UserInfo.objects.get(user=request.user))
+    userInfo['email'] = request.user.email
     data = []
     for realEstate in filter_type_and_location:
 
@@ -297,7 +298,7 @@ def get_real_estates(request):
 
         field = {
             "id": realEstate.pk,
-            "advertiser": realEstate.advertiser.id,
+            "advertiser": userInfo,
             "nationalID": str(realEstate.nationalID),
             "title": realEstate.title,
             "price": str(realEstate.price),
@@ -313,16 +314,17 @@ def get_real_estates(request):
         }
         data.append(field)
 
-    return custom_response(data={'data': data}, success=True)
+    return custom_response(data=data, success=True)
 
 
 @ authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
 @ permission_classes([IsAuthenticated])
 @ api_view(['GET'])
-def my_real_estate(request):
+def my_real_estates(request):
 
-    current_user = User.objects.get(id=request.user.id)
-    filtered_by_user = RealEstate.objects.filter(advertiser=current_user)
+    userInfo = model_to_dict(UserInfo.objects.get(user=request.user))
+    userInfo['email'] = request.user.email
+    filtered_by_user = RealEstate.objects.filter(advertiser=request.user)
 
     data = []
     for realEstate in filtered_by_user:
@@ -331,21 +333,23 @@ def my_real_estate(request):
 
         field = {
             "id": realEstate.pk,
+            "advertiser": userInfo,
+            "nationalID": str(realEstate.nationalID),
             "title": realEstate.title,
-            "price": realEstate.price,
-            "facilitiesNum": realEstate.facilitiesNum,
+            "price": str(realEstate.price),
+            "facilitiesNum": str(realEstate.facilitiesNum),
+            "description": realEstate.description,
             "type": realEstate.type,
             "operation": realEstate.operation,
             "state": realEstate.state,
             "city": realEstate.city,
             "location": realEstate.location,
-            "description": realEstate.description,
             "approval": realEstate.approval,
             "images": [{"url": str(image.image), "type": image.type} for image in images],
         }
         data.append(field)
 
-    return custom_response(data={'data': data}, success=True)
+    return custom_response(data=data, success=True)
 
 
 @ authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])

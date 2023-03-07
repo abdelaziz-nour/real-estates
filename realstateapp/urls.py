@@ -14,7 +14,7 @@ urlpatterns = [
 
     # user interaction
     path('adding_real_estate', views.adding_real_estate),
-    path('my_real_estate', views.my_real_estate),
+    path('my_real_estates', views.my_real_estates),
     path('delete_my_estate', views.delete_my_estate),
 
     # Filters
