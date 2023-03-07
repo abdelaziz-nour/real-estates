@@ -12,6 +12,7 @@ from rest_framework.authentication import *
 from rest_framework.decorators import *
 from rest_framework.permissions import *
 from django.forms.models import model_to_dict
+from django.db.models import Max
 
 
 def index(request):
@@ -93,7 +94,7 @@ def register(request):
 @api_view(['POST'])
 def login(request):
     try:
-        username = request.data["username"]
+        username = request.data["phone"]
         password = request.data["password"]
         user = authenticate(username=username, password=password)
 
@@ -139,10 +140,12 @@ def adding_real_estate(request):
 
             newRealEstate.save()
             for image in request.data.getlist('images'):
-                Image(realEstate=newRealEstate, image=image, type="View").save()
+                Image(realEstate=newRealEstate,
+                      image=image, type="View").save()
 
             for image in request.data.getlist('ownerShipProof'):
-                Image(realEstate=newRealEstate, image=image, type="Proof").save()
+                Image(realEstate=newRealEstate,
+                      image=image, type="Proof").save()
 
             return custom_response(success=True)
 
@@ -262,10 +265,32 @@ def city_state_price(request):
 
 @authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
 @permission_classes([IsAuthenticated])
-@api_view(['get'])
-def get_real_estates(request):
-    filter_type_and_location = RealEstate.objects.all()
+@api_view(['GET'])
+def filters_values(request):
+    if (request.user.is_authenticated):
 
+        max_price = RealEstate.objects.all().aggregate(Max('price'))
+        states = (RealEstate.objects.values('state').distinct())
+        cities = (RealEstate.objects.values('city').distinct())
+
+        print(max_price)
+        return custom_response(
+            success=True,
+            data={
+                "cities": [city['city'] for city in cities],
+                "states": [state['state'] for state in states],
+                "maxPrice": max_price['price__max'],
+            }
+        )
+
+
+@ authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
+@ permission_classes([IsAuthenticated])
+@ api_view(['get'])
+def get_real_estates(request):
+    filter_type_and_location = RealEstate.objects.filter(approval="Accepted")
+    userInfo = model_to_dict(UserInfo.objects.get(user=request.user))
+    userInfo['email'] = request.user.email
     data = []
     for realEstate in filter_type_and_location:
 
@@ -273,7 +298,7 @@ def get_real_estates(request):
 
         field = {
             "id": realEstate.pk,
-            "advertiser": realEstate.advertiser.id,
+            "advertiser": userInfo,
             "nationalID": str(realEstate.nationalID),
             "title": realEstate.title,
             "price": str(realEstate.price),
@@ -289,16 +314,17 @@ def get_real_estates(request):
         }
         data.append(field)
 
-    return custom_response(data={'data': data}, success=True)
+    return custom_response(data=data, success=True)
 
 
-@authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
-@permission_classes([IsAuthenticated])
-@api_view(['GET'])
-def my_real_estate(request):
+@ authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
+@ permission_classes([IsAuthenticated])
+@ api_view(['GET'])
+def my_real_estates(request):
 
-    current_user = User.objects.get(id=request.user.id)
-    filtered_by_user = RealEstate.objects.filter(advertiser=current_user)
+    userInfo = model_to_dict(UserInfo.objects.get(user=request.user))
+    userInfo['email'] = request.user.email
+    filtered_by_user = RealEstate.objects.filter(advertiser=request.user)
 
     data = []
     for realEstate in filtered_by_user:
@@ -307,36 +333,44 @@ def my_real_estate(request):
 
         field = {
             "id": realEstate.pk,
+            "advertiser": userInfo,
+            "nationalID": str(realEstate.nationalID),
             "title": realEstate.title,
-            "price": realEstate.price,
-            "facilitiesNum": realEstate.facilitiesNum,
+            "price": str(realEstate.price),
+            "facilitiesNum": str(realEstate.facilitiesNum),
+            "description": realEstate.description,
             "type": realEstate.type,
             "operation": realEstate.operation,
             "state": realEstate.state,
             "city": realEstate.city,
             "location": realEstate.location,
-            "description": realEstate.description,
             "approval": realEstate.approval,
             "images": [{"url": str(image.image), "type": image.type} for image in images],
         }
         data.append(field)
 
-    return custom_response(data={'data': data}, success=True)
+    return custom_response(data=data, success=True)
 
 
-@authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
-@permission_classes([IsAuthenticated])
-@api_view(['post'])
+@ authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
+@ permission_classes([IsAuthenticated])
+@ api_view(['post'])
 def delete_my_estate(request):
-    current_user = User.objects.get(id=request.user.id)
-    filter_my_estates = RealEstate.objects.filter(advertiser=current_user)
-    filter_my_estates.get(id=request.data["id"]).delete()
-    return custom_response(success=True, message="Real estate successfully deleted")
+    try:
+        current_user = User.objects.get(id=request.user.id)
+        filter_my_estates = RealEstate.objects.filter(advertiser=current_user)
+        filter_my_estates.get(id=request.data["id"]).delete()
+        return custom_response(success=True, message="Real estate successfully deleted")
+
+    except BaseException as exception:
+        logging.warning(f"Exception Name: {type(exception).__name__}")
+        logging.warning(f"Exception Desc: {exception}")
+        return custom_response(message="Authentication Failure")
 
 
-@authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
-@permission_classes([IsAuthenticated])
-@api_view(['post'])
+@ authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
+@ permission_classes([IsAuthenticated])
+@ api_view(['post'])
 def accept_real_estate(request):
     estates = RealEstate.objects.get(id=request.data["id"])
     estates.approval = "Accepted"
@@ -344,9 +378,9 @@ def accept_real_estate(request):
     return custom_response(success=True, message="Rejected")
 
 
-@authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
-@permission_classes([IsAuthenticated])
-@api_view(['post'])
+@ authentication_classes([TokenAuthentication, BaseAuthentication, SessionAuthentication])
+@ permission_classes([IsAuthenticated])
+@ api_view(['post'])
 def reject_real_estate(request):
     estates = RealEstate.objects.get(id=request.data["id"])
     estates.approval = "Rejected"

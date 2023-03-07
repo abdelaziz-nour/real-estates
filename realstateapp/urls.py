@@ -14,10 +14,11 @@ urlpatterns = [
 
     # user interaction
     path('adding_real_estate', views.adding_real_estate),
-    path('my_real_estate', views.my_real_estate),
+    path('my_real_estates', views.my_real_estates),
     path('delete_my_estate', views.delete_my_estate),
 
     # Filters
+    path('filters_values', views.filters_values),
     path('default_filtered_estate', views.default_filtered_estate),
     path('type_filtered_estate', views.type_filtered_estate),
     path('state_filtered_estate', views.state_filtered_estate),
