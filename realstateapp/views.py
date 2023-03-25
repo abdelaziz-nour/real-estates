@@ -311,7 +311,7 @@ def get_real_estates(request):
             "city": realEstate.city,
             "location": realEstate.location,
             "approval": realEstate.approval,
-            "images": [{"url": str(image.image), "type": image.type} for image in images],
+            "images": [{"url": str(image.image), "type": image.type} for image in images if image.type != "Proof"],
         }
         data.append(field)
 
